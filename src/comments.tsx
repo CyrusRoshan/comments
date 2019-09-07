@@ -1,66 +1,127 @@
 import * as React from "react";
 import '../lib/textHighlighter';
-import { HLTR } from "./hltr";
+import { HLTR, createHighlighter } from "./hltr";
 
 type RawHighlights = Element[];
 
 export class Highlight {
-  rawHighlights: RawHighlights = [];
+  InnerHighlights: RawHighlights = [];
 
   // Constructor takes in the array of highlight elements used to create the highlight
   constructor(rh: RawHighlights) {
-    this.rawHighlights = rh;
+    this.InnerHighlights = rh;
   }
 
   // Clears a given highlight from the page
   clear() {
-    this.rawHighlights.forEach((rawHighlight) => {
-      HLTR.removeHighlights(rawHighlight)
+    this.InnerHighlights.forEach((innerHighlight) => {
+      HLTR.removeHighlights(innerHighlight)
     })
   }
 }
 
 export class Comment {
-  email: string = null
-  content: string = null
+  Email: string = null
+  Content: string = null
 
   constructor(email: string, content: string) {
-    this.email = email;
-    this.content = content;
+    this.Email = email;
+    this.Content = content;
   }
 }
 
 export interface AnnotationProps {
-  highlight: Highlight
-  comments: Comment[]
+  Highlight: Highlight
+  Comments: Comment[]
 }
 interface AnnotationState {
-  highlight: Highlight
-  comments: Comment[]
+  Highlight: Highlight
+  Comments: Comment[]
 }
 export class Annotation extends React.Component<AnnotationProps, AnnotationState> {
   constructor(props: AnnotationProps) {
     super(props);
     this.state = props;
-    console.log("CONSTRUCTED")
   }
 
   componentWillUnmount() {
-    this.state.highlight.clear()
+    this.state.Highlight.clear()
   }
 
   render() {
-    console.log("RENDERED SOMEWHERE?")
-    const renderedComments = this.state.comments.map((comment) =>
+    const renderedComments = this.state.Comments.map((comment) =>
       <li>
-        <p>from: {comment.email}</p>
+        <p>from: {comment.Email}</p>
         <p>content: {comment}</p>
       </li>
     )
 
-    return <div className="test" onClick={(() => {this.state.highlight.clear()}).bind(this)}>
-      <h2>Comments:</h2>
+    return <div>
+      <h2>Annotation:</h2>
       <ul>{renderedComments}</ul>
+    </div>;
+  }
+}
+
+export interface RootProps {
+  Annotations: Annotation[]
+  Sandbox: Element
+}
+interface RootState {
+  Annotations: Annotation[]
+  InProgressAnnotation: JSX.Element | undefined;
+  LastSelectTime?: number
+}
+
+export class Root extends React.Component<RootProps, RootState> {
+  constructor(props: RootProps) {
+    super(props);
+    this.state = {
+      Annotations: props.Annotations,
+      InProgressAnnotation: undefined,
+    };
+
+    createHighlighter(props.Sandbox, this.onBeforeHighlight.bind(this), this.onNewHighlight.bind(this));
+    document.addEventListener("click", this.onDocumentClick.bind(this));
+  }
+
+  onDocumentClick(event: Event) {
+    if (!this.state.LastSelectTime) {
+      return;
+    }
+
+    // @ts-ignore
+    const elem: Element = event.target;
+    const highlightClicked = elem.classList.contains("highlighted") && elem.hasAttribute("data-highlighted");
+    const clickNotFromHighlighting = Date.now() > 100 + this.state.LastSelectTime;
+
+    if (clickNotFromHighlighting && !highlightClicked) {
+      this.setState({ InProgressAnnotation: undefined });
+    }
+  }
+
+  onBeforeHighlight(range: Range) {
+    // Remove previous inprogress annotation
+    this.setState({
+      InProgressAnnotation: undefined,
+      LastSelectTime: Date.now(),
+    });
+    return true;
+  }
+
+  onNewHighlight(range: Range, highlights: Element[]) {
+    const inProgressHighlight = new Highlight(highlights);
+    this.setState({
+      InProgressAnnotation: <Annotation Highlight={inProgressHighlight} Comments={[]}></Annotation>,
+    })
+  }
+
+
+  render() {
+    return <div>
+      <h2>All Annotations:</h2>
+      <ul>{this.state.InProgressAnnotation}</ul>
+      <ul>{this.state.Annotations}</ul>
     </div>;
   }
 }
