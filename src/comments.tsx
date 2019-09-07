@@ -5,10 +5,12 @@ import { HLTR, createHighlighter } from "./hltr";
 type RawHighlights = Element[];
 
 export class Highlight {
-  InnerHighlights: RawHighlights = [];
+  Range: Range;
+  InnerHighlights: RawHighlights;
 
   // Constructor takes in the array of highlight elements used to create the highlight
-  constructor(rh: RawHighlights) {
+  constructor(range: Range, rh: RawHighlights) {
+    this.Range = range;
     this.InnerHighlights = rh;
   }
 
@@ -17,6 +19,11 @@ export class Highlight {
     this.InnerHighlights.forEach((innerHighlight) => {
       HLTR.removeHighlights(innerHighlight)
     })
+  }
+
+  // Returns the bounding box for the Range Element
+  boundingBox() {
+    return this.Range.getBoundingClientRect();
   }
 }
 
@@ -55,10 +62,29 @@ export class Annotation extends React.Component<AnnotationProps, AnnotationState
         <p>content: {comment}</p>
       </li>
     )
+    const highlightBoundingBox = this.props.Highlight.boundingBox();
+    const pageYOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
 
     return <div>
       <h2>Annotation:</h2>
       <ul>{renderedComments}</ul>
+      <div style={{
+        position: "absolute",
+        top: highlightBoundingBox.top + pageYOffset,
+        left: highlightBoundingBox.width + highlightBoundingBox.left + 10,
+        "background-color": 'red',
+
+        padding: 5,
+        "padding-left": 10,
+        "padding-right": 10,
+
+        "border-radius": 5,
+      }}>
+        TEST
+        position: "absolute",
+        top: {highlightBoundingBox.top},
+        left: {highlightBoundingBox.left},
+      </div>
     </div>;
   }
 }
@@ -110,7 +136,7 @@ export class Root extends React.Component<RootProps, RootState> {
   }
 
   onNewHighlight(range: Range, highlights: Element[]) {
-    const inProgressHighlight = new Highlight(highlights);
+    const inProgressHighlight = new Highlight(range, highlights);
     this.setState({
       InProgressAnnotation: <Annotation Highlight={inProgressHighlight} Comments={[]}></Annotation>,
     })
