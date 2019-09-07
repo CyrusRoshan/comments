@@ -2,7 +2,7 @@ const path = require('path');
 const AssetsAppendWebpackPlugin = require('assets-append-webpack-plugin');
 
 module.exports = {
-  entry: './src/index.ts',
+  entry: './src/index.tsx',
   optimization: {
     minimize: false
   },
