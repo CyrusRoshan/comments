@@ -57,7 +57,7 @@ export class Annotation extends React.Component<AnnotationProps, AnnotationState
 
   render() {
     const renderedComments = this.state.Comments.map((comment) =>
-      <li>
+      <li style={styles.Comment}>
         <p>from: {comment.Email}</p>
         <p>content: {comment}</p>
       </li>
@@ -65,27 +65,60 @@ export class Annotation extends React.Component<AnnotationProps, AnnotationState
     const highlightBoundingBox = this.props.Highlight.boundingBox();
     const pageYOffset = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop;
 
-    return <div>
+    return <div className={"annotationBlock"}>
       <h2>Annotation:</h2>
       <ul>{renderedComments}</ul>
-      <div style={{
-        position: "absolute",
-        top: highlightBoundingBox.top + pageYOffset,
-        left: highlightBoundingBox.width + highlightBoundingBox.left + 10,
-        "background-color": 'red',
-
-        padding: 5,
-        "padding-left": 10,
-        "padding-right": 10,
-
-        "border-radius": 5,
-      }}>
-        TEST
-        position: "absolute",
-        top: {highlightBoundingBox.top},
-        left: {highlightBoundingBox.left},
+      <div style={
+        {
+          ...styles.AnnotationBox,
+          ...{
+            top: highlightBoundingBox.top + pageYOffset,
+            left: highlightBoundingBox.width + highlightBoundingBox.left + 10,
+          },
+        }
+      }>
+        {renderedComments}
+        <div style={styles.AddCommentBox}>
+          <p style={styles.Reset}>{
+            renderedComments.length
+            ? "Reply:"
+            : "Write a comment:"
+          }</p>
+          <textarea name="comment" rows={5} style={styles.CommentInput}></textarea>
+          <button type="submit">Send</button>
+        </div>
       </div>
     </div>;
+  }
+}
+
+const styles = {
+  Reset: {
+    margin: 0
+  },
+
+  AnnotationBox: {
+    "position": "absolute",
+    "background-color": "#d9d9d9",
+    "padding": 10,
+    "border": "2px solid black",
+    "font-family": "georgia, times, serif",
+  },
+
+  Comment: {
+
+  },
+
+  AddCommentBox: {
+    "display": "flex",
+    "flex-direction": "column",
+  },
+
+  CommentInput: {
+    "padding": 5,
+    "border-radius": 5,
+    "font-size": 12,
+    "font-family": "georgia, times, serif",
   }
 }
 
@@ -121,17 +154,34 @@ export class Root extends React.Component<RootProps, RootState> {
     const highlightClicked = elem.classList.contains("highlighted") && elem.hasAttribute("data-highlighted");
     const clickNotFromHighlighting = Date.now() > 100 + this.state.LastSelectTime;
 
-    if (clickNotFromHighlighting && !highlightClicked) {
+    function annotationClicked(e: Element, count: number): boolean {
+      if (count < 1) {
+        return false;
+      }
+      if (e.classList.contains("annotationBlock")) {
+        return true;
+      }
+      if (!e.parentElement) {
+        return false;
+      }
+      return annotationClicked(e.parentElement, count - 1);
+    }
+
+    if (clickNotFromHighlighting && !highlightClicked && !annotationClicked(elem, 5)) {
       this.setState({ InProgressAnnotation: undefined });
     }
   }
 
   onBeforeHighlight(range: Range) {
-    // Remove previous inprogress annotation
+    // Remove previous in-progress annotation
     this.setState({
       InProgressAnnotation: undefined,
       LastSelectTime: Date.now(),
     });
+
+    if (range.startOffset === 1 && range.endOffset === 1) {
+      return false;
+    }
     return true;
   }
 
