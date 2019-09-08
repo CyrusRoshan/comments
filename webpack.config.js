@@ -4,33 +4,34 @@ const AssetsAppendWebpackPlugin = require('assets-append-webpack-plugin');
 module.exports = {
   entry: './src/index.tsx',
   optimization: {
-    minimize: false
+    minimize: false,
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
         use: 'ts-loader',
-        exclude: /node_modules/
-      }
-    ]
+        exclude: /node_modules/,
+      },
+    ],
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js']
+    extensions: ['.tsx', '.ts', '.js'],
   },
   plugins: [
     new AssetsAppendWebpackPlugin({
-      header: `
+      header:
+        `
 // ==UserScript==
 // @name Blog Comments
 // @namespace Violentmonkey Scripts
-// @match https://blog.cyrusroshan.com/*
+// @match http://localhost:1313/*
 // @grant none
-// ==/UserScript==` + ('\n').repeat(3),
-    })
+// ==/UserScript==` + '\n'.repeat(3),
+    }),
   ],
   output: {
     filename: 'bundle.js',
-    path: path.resolve(__dirname, 'dist')
-  }
+    path: path.resolve(__dirname, 'dist'),
+  },
 };
