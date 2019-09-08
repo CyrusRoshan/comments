@@ -21,9 +21,37 @@ export class Highlight {
     })
   }
 
-  // Returns the bounding box for the Range Element
+  // Returns the bounding box for the highlights
   boundingBox() {
-    return this.Range.getBoundingClientRect();
+    const rangeBoundingBox = this.Range.getBoundingClientRect();
+
+    // Get the bounding box with full width
+    var container = this.Range.startContainer;
+    while (container && container.nodeType !== 1) {
+      container = container.parentElement;
+    }
+
+    // Fallback:
+    if (!container) {
+      return rangeBoundingBox;
+    }
+
+    const boundingBox = (container as Element).getBoundingClientRect();
+
+    const customBoundingBox = {
+      // This is set to rangeBoundingBox.top, because we want the left property
+      // of the container bounding box, but we want the top bounding box of the
+      // highlight range, so we can position the comment there.
+      // TODO: check this on other websites.
+      top: rangeBoundingBox.top,
+
+      bottom: boundingBox.bottom,
+      left: boundingBox.left,
+      right: boundingBox.right,
+      width: boundingBox.width,
+      height: boundingBox.height,
+    }
+    return customBoundingBox;
   }
 }
 
